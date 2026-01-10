@@ -17,7 +17,7 @@ func (p *Pool) worker(id int) {
 		case job.ResultCh <- result:
 			//delivered
 		default:
-			// handler gone, drop result
+			// handler gone drop result
 		}
 
 	}
