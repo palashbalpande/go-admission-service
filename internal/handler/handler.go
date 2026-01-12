@@ -45,13 +45,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), h.timeout)
 	defer cancel()
 
-	// if !h.admission.TryAcquire() {
-	// 	http.Error(w, "buzy", http.StatusTooManyRequests)
-	// 	return
-	// }
-
-	// defer h.admission.Release()
-
 	release, err := h.admission.Acquire(ctx)
 	if err != nil {
 		http.Error(w, "buzy", http.StatusTooManyRequests)
