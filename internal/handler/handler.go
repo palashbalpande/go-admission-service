@@ -8,6 +8,7 @@ import (
 
 	"go-admission-service/internal/admission"
 	"go-admission-service/internal/dependency"
+	"go-admission-service/internal/metrics"
 	"go-admission-service/internal/workerpool"
 )
 
@@ -15,6 +16,7 @@ type Handler struct {
 	admission *admission.Admission
 	pool      *workerpool.Pool
 	dep       *dependency.Client
+	metrics   *metrics.Counters
 
 	timeout time.Duration
 }
@@ -23,17 +25,23 @@ func New(
 	ad *admission.Admission,
 	pool *workerpool.Pool,
 	dep *dependency.Client,
+	m *metrics.Counters,
 	timeout time.Duration,
 ) *Handler {
 	return &Handler{
 		admission: ad,
 		pool:      pool,
 		dep:       dep,
+		metrics:   m,
 		timeout:   timeout,
 	}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	h.metrics.IncRequests()
+	defer h.metrics.DecRequests()
+
 	ctx, cancel := context.WithTimeout(r.Context(), h.timeout)
 	defer cancel()
 

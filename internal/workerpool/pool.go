@@ -3,6 +3,7 @@ package workerpool
 import (
 	"context"
 	"errors"
+	"go-admission-service/internal/metrics"
 	"sync"
 )
 
@@ -25,12 +26,15 @@ type Pool struct {
 	wg   sync.WaitGroup
 	once sync.Once
 	done chan struct{}
+
+	metrics *metrics.Counters
 }
 
-func New(workerCount int, queueSize int) *Pool {
+func New(workerCount int, queueSize int, m *metrics.Counters) *Pool {
 	p := &Pool{
-		jobs: make(chan Job, queueSize),
-		done: make(chan struct{}),
+		jobs:    make(chan Job, queueSize),
+		done:    make(chan struct{}),
+		metrics: m,
 	}
 
 	p.wg.Add(workerCount)
@@ -45,6 +49,7 @@ func New(workerCount int, queueSize int) *Pool {
 func (p *Pool) Submit(ctx context.Context, job Job) error {
 	select {
 	case p.jobs <- job:
+		p.metrics.SetQueueDepth(len(p.jobs))
 		return nil
 
 	case <-ctx.Done():
